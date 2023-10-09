@@ -10,7 +10,6 @@ import {
   initCollection,
   initTree,
   mintCompressedNft,
-  transferAsset,
 } from "./utils";
 import { WrappedConnection } from "./wrappedConnection";
 
@@ -38,7 +37,7 @@ const e2e = async () => {
   const ownerWallet = Keypair.fromSecretKey(decodedSecretKey);
   console.log("Owner wallet: " + ownerWallet.publicKey);
 
-  const connectionString = `https://rpc-devnet.helius.xyz?api-key=${apiKey}`;
+  const connectionString = `https://devnet.helius-rpc.com/?api-key=${apiKey}`;
   const connectionWrapper = new WrappedConnection(
     ownerWallet,
     connectionString
@@ -68,7 +67,7 @@ const e2e = async () => {
     name: "Compression Test",
     symbol: "COMP",
     uri: "https://arweave.net/gfO_TkYttQls70pTmhrdMDz9pfMUXX8hZkaoIivQjGs",
-    creators: [],
+    creators: [{ address: ownerWallet.publicKey, verified: false, share: 100 }],
     editionNonce: 253,
     tokenProgramVersion: TokenProgramVersion.Original,
     tokenStandard: TokenStandard.NonFungible,
@@ -100,24 +99,11 @@ const e2e = async () => {
   const assetId = await getCompressedNftId(treeWallet, leafIndex);
   console.log("Minted asset: " + assetId);
 
-  // Fixed wallet to receive the NFT when we test transfer.
-  const newOwnerWallet = Keypair.fromSeed(
-    new TextEncoder().encode("next wallet".padEnd(32, "\0"))
-  );
-  console.log("New owner wallet: " + newOwnerWallet.publicKey.toBase58());
+  const rpcAsset = await connectionWrapper.getAsset(assetId);
+  console.log(rpcAsset);
 
-  console.log("\n===Transfer===");
-  console.log("Transfer to new wallet.");
-  await transferAsset(
-    connectionWrapper,
-    ownerWallet,
-    newOwnerWallet,
-    assetId.toBase58()
-  );
-  console.log(
-    "Successfully transferred nft to wallet: " +
-      newOwnerWallet.publicKey.toBase58()
-  );
+  const rpcAssetProof = await connectionWrapper.getAssetProof(assetId);
+  console.log(rpcAssetProof);
 };
 
 e2e();
